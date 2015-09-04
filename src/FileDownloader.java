@@ -3,16 +3,16 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 
-public class Main {
+public class FileDownloader {
 
     public static void main(String[] args) {
 
         System.out.println("Hello World!");
 
-        fileDownload("http://docs.oracle.com/javase/7/docs/api/java/io/File.html#mkdirs()", "Downloads");
+        fileDownload("http://www.clarin.com", "Downloads");
     }
 
-    public static void fileUrl(String fAddress, String localFileName, String destinationDir) {
+    private static void fileUrl(String fAddress, String localFileName, String destinationDir) {
 
         File dir = new File(destinationDir);
 
@@ -52,7 +52,7 @@ public class Main {
         }
     }
 
-    public static void fileDownload(String fAddress, String destinationDir) {
+    private static void fileDownload(String fAddress, String destinationDir) {
         int slashIndex = fAddress.lastIndexOf('/');
         int periodIndex = fAddress.lastIndexOf('.');
 
