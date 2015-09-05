@@ -1,18 +1,47 @@
 import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.concurrent.BlockingQueue;
 
-public class FileDownloader {
+public class FileDownloader implements Runnable {
 
-    public static void main(String[] args) {
+    private BlockingQueue<String> analizedUrlQueue;
+
+    public FileDownloader(BlockingQueue<String> urlQueue) {
+        analizedUrlQueue = urlQueue;
+    }
+
+    public void run() {
+
+        while (true) {
+            String url = null;
+            try {
+                url = analizedUrlQueue.take();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            if (url != null) {
+                System.out.println("Downloading "+url);
+                fileDownload(url, "Downloads");
+            }
+            else {
+                break;
+            }
+        }
+
+    }
+
+    /*public static void main(String[] args) {
 
         System.out.println("Hello World!");
 
         fileDownload("http://www.clarin.com", "Downloads");
-    }
+    }*/
 
-    private static void fileUrl(String fAddress, String localFileName, String destinationDir) {
+    private void fileUrl(String fAddress, String localFileName, String destinationDir) {
 
         File dir = new File(destinationDir);
 
@@ -22,7 +51,7 @@ public class FileDownloader {
         }
 
         OutputStream outStream = null;
-        URLConnection connection = null;
+        HttpURLConnection connection = null;
         InputStream inStream = null;
         try {
             URL url;
@@ -30,29 +59,43 @@ public class FileDownloader {
             int byteRead, byteWritten = 0;
             url = new URL(fAddress);
             outStream = new BufferedOutputStream(new FileOutputStream(destinationDir + "/" + localFileName));
+            connection = (HttpURLConnection)url.openConnection();
 
-            connection = url.openConnection();
-            inStream = connection.getInputStream();
-            buf = new byte[512];
-            while ((byteRead = inStream.read(buf)) != -1) {
-                outStream.write(buf, 0, byteRead);
-                byteWritten += byteRead;
+            if (connection.getResponseCode() == 200) {
+                inStream = connection.getInputStream();
+
+                buf = new byte[512];
+                while ((byteRead = inStream.read(buf)) != -1) {
+                    outStream.write(buf, 0, byteRead);
+                    byteWritten += byteRead;
+                }
+                System.out.println("Downloaded Successfully.");
+                System.out.println("File name:\"" + localFileName + "\"\nNo ofbytes :" + byteWritten);
             }
-            System.out.println("Downloaded Successfully.");
-            System.out.println("File name:\"" + localFileName + "\"\nNo ofbytes :" + byteWritten);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            try {
-                inStream.close();
-                outStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+
+            if (inStream != null) {
+                try {
+                    inStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
+
+            if (outStream != null) {
+                try {
+                    outStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
         }
     }
 
-    private static void fileDownload(String fAddress, String destinationDir) {
+    private void fileDownload(String fAddress, String destinationDir) {
         int slashIndex = fAddress.lastIndexOf('/');
         int periodIndex = fAddress.lastIndexOf('.');
 

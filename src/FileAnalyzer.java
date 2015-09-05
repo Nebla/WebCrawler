@@ -4,21 +4,45 @@ import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.parser.ParserDelegator;
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.concurrent.BlockingQueue;
 
 /**
  * Created by adrian on 04/09/15.
  */
-public class FileAnalyzer {
+public class FileAnalyzer implements Runnable {
 
+    private BlockingQueue<String> analizedUrlQueue;
 
-    public static void main(String[] args) {
+    public FileAnalyzer(BlockingQueue<String> urlQueue) {
+        analizedUrlQueue = urlQueue;
+    }
+
+    public void run() {
+        System.out.println("Hello from a thread!");
+        try {
+            analyzeFile("Downloads/Clarín.html", "http://www.clarin.com");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+
+        }
+        //analyzeFile("Downloads/www.clarin.com","www.clarin.com");
+    }
+
+    /*public static void main(String args[]) {
+        (new Thread(new FileAnalyzer())).start();
+    }*/
+
+    /*public static void main(String[] args) {
 
         System.out.println("Hello World!");
 
         analyzeFile("Downloads/www.clarin.com","www.clarin.com");
-    }
+    }*/
 
-    public static void analyzeFile (String fileName, String url) {
+
+    public void analyzeFile (String fileName, String url) throws InterruptedException {
 
         InputStream is = null;
         try {
@@ -47,7 +71,24 @@ public class FileAnalyzer {
             String imgSrc = (String) attributes.getAttribute(HTML.Attribute.SRC);
 
             if (imgSrc != null && (imgSrc.endsWith(".jpg") || (imgSrc.endsWith(".png")) || (imgSrc.endsWith(".jpeg")) || (imgSrc.endsWith(".bmp")) || (imgSrc.endsWith(".ico")))) {
-                System.out.println(url+"/"+imgSrc);
+
+                URI u = null;
+                try {
+                    u = new URI(imgSrc);
+                } catch (URISyntaxException e) {
+                    e.printStackTrace();
+                }
+
+                String finalImgUrl = null;
+                if(u.isAbsolute()) {
+                    finalImgUrl = imgSrc;
+                }
+                else {
+                    finalImgUrl = url+ "/" + u.normalize().toString();
+                }
+
+                System.out.println(finalImgUrl);
+                analizedUrlQueue.put(finalImgUrl);
             }
         }
 
@@ -57,7 +98,24 @@ public class FileAnalyzer {
 
             if (linkSrc != null) {
                 // Check if it starts with a / is a relative address
-                System.out.println(linkSrc);
+
+                URI u = null;
+                try {
+                    u = new URI(linkSrc);
+                } catch (URISyntaxException e) {
+                    e.printStackTrace();
+                }
+
+                String finalLinkUrl = null;
+                if(u.isAbsolute()) {
+                    finalLinkUrl = linkSrc;
+                }
+                else {
+                    finalLinkUrl = url+ "/" + u.normalize().toString();
+                }
+
+                System.out.println(finalLinkUrl);
+                analizedUrlQueue.put(finalLinkUrl);
             }
         }
     }
