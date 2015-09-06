@@ -3,32 +3,32 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.util.concurrent.BlockingQueue;
 
 public class FileDownloader implements Runnable {
 
-    private BlockingQueue<String> analizedUrlQueue;
+    private BlockingQueue<String> urlToDownloadQueue;
 
-    public FileDownloader(BlockingQueue<String> urlQueue) {
-        analizedUrlQueue = urlQueue;
+    private BlockingQueue<Pair<String, String>> fileToAnalyzeQueue;
+
+    public FileDownloader(BlockingQueue<String> downloadQueue, BlockingQueue<Pair<String, String>> fileAnalyzeQueue) {
+        urlToDownloadQueue = downloadQueue;
+        fileToAnalyzeQueue = fileAnalyzeQueue;
     }
 
     public void run() {
 
-        while (true) {
-            String url = null;
+        while (!Thread.interrupted()) {
+
             try {
-                url = analizedUrlQueue.take();
+                String url = urlToDownloadQueue.take();
+                System.out.println("Downloading "+url);
+                downloadFile(url, "Downloads");
+
             } catch (InterruptedException e) {
                 e.printStackTrace();
-            }
-
-            if (url != null) {
-                System.out.println("Downloading "+url);
-                fileDownload(url, "Downloads");
-            }
-            else {
-                break;
             }
         }
 
@@ -41,70 +41,82 @@ public class FileDownloader implements Runnable {
         fileDownload("http://www.clarin.com", "Downloads");
     }*/
 
-    private void fileUrl(String fAddress, String localFileName, String destinationDir) {
+    private void downloadFile(String fAddress, String destinationDir) throws InterruptedException {
+        int slashIndex = fAddress.lastIndexOf('/');
 
-        File dir = new File(destinationDir);
+        String localFileName = fAddress.substring(slashIndex + 1);
 
-        // We create the download directory if it doesn't exists
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
+        if (localFileName.length() > 0) {
+            File dir = new File(destinationDir);
 
-        OutputStream outStream = null;
-        HttpURLConnection connection = null;
-        InputStream inStream = null;
-        try {
-            URL url;
-            byte[] buf;
-            int byteRead, byteWritten = 0;
-            url = new URL(fAddress);
-            outStream = new BufferedOutputStream(new FileOutputStream(destinationDir + "/" + localFileName));
-            connection = (HttpURLConnection)url.openConnection();
-
-            if (connection.getResponseCode() == 200) {
-                inStream = connection.getInputStream();
-
-                buf = new byte[512];
-                while ((byteRead = inStream.read(buf)) != -1) {
-                    outStream.write(buf, 0, byteRead);
-                    byteWritten += byteRead;
-                }
-                System.out.println("Downloaded Successfully.");
-                System.out.println("File name:\"" + localFileName + "\"\nNo ofbytes :" + byteWritten);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-
-            if (inStream != null) {
-                try {
-                    inStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            // We create the download directory if it doesn't exists
+            if (!dir.exists()) {
+                dir.mkdirs();
             }
 
-            if (outStream != null) {
-                try {
-                    outStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+            OutputStream outStream = null;
+            HttpURLConnection connection = null;
+            InputStream inStream = null;
+            try {
+                URL url;
+                byte[] buf;
+                int byteRead, byteWritten = 0;
+
+                url = new URL(fAddress);
+
+                outStream = new BufferedOutputStream(new FileOutputStream(destinationDir + "/" + localFileName));
+                connection = (HttpURLConnection) url.openConnection();
+
+                if (connection.getResponseCode() == 200) {
+                    inStream = connection.getInputStream();
+
+                    buf = new byte[512];
+                    while ((byteRead = inStream.read(buf)) != -1) {
+                        outStream.write(buf, 0, byteRead);
+                        byteWritten += byteRead;
+                    }
+                    //System.out.println("Downloaded Successfully.");
+                    //System.out.println("File name:\"" + localFileName + "\"\nNo ofbytes :" + byteWritten);
+
+                    String fileType = Files.probeContentType(FileSystems.getDefault().getPath(destinationDir, localFileName));
+                    if (fileType.equals("text/html")) {
+                        fileToAnalyzeQueue.put(new Pair<String, String>(destinationDir + "/" + localFileName, fAddress));
+                    }
+                }
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+
+                if (inStream != null) {
+                    try {
+                        inStream.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                if (outStream != null) {
+                    try {
+                        outStream.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
-
         }
     }
 
-    private void fileDownload(String fAddress, String destinationDir) {
+    /*private void fileDownload(String fAddress, String destinationDir) throws InterruptedException{
         int slashIndex = fAddress.lastIndexOf('/');
         int periodIndex = fAddress.lastIndexOf('.');
 
         String fileName = fAddress.substring(slashIndex + 1);
+        downloadfileUrl(fAddress, fileName, destinationDir);
 
-        if (periodIndex >= 1 && slashIndex >= 0 && slashIndex < fAddress.length() - 1) {
-            fileUrl(fAddress, fileName, destinationDir);
-        } else {
-            System.err.println("path or file name.");
-        }
-    }
+    }*/
 }

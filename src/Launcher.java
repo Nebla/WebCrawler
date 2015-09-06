@@ -1,9 +1,8 @@
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -32,18 +31,30 @@ public class Launcher {
             System.out.println(prop.getProperty("fileDownloader"));
             System.out.println(prop.getProperty("urlAnalyzer"));
 
-
             int queueSize =  Integer.parseInt(prop.getProperty("queueSize"));
-            BlockingQueue<String> queue = new ArrayBlockingQueue<String>(queueSize);
 
-            (new Thread(new FileAnalyzer(queue))).start();
+            BlockingQueue<String> urlToAnalyzeQueue = new ArrayBlockingQueue<String>(queueSize);
+            BlockingQueue<Pair<String, String>> fileToAnalyzedQueue = new ArrayBlockingQueue<Pair<String, String>>(queueSize);
+            BlockingQueue<String> urlToDownloadQueue = new ArrayBlockingQueue<String>(queueSize);
 
-            Thread thread  = (new Thread(new FileDownloader(queue)));
-            thread.start();
-            (new Thread(new FileDownloader(queue))).start();
-            (new Thread(new FileDownloader(queue))).start();
+            ConcurrentHashMap<String,Boolean> hashMap = new ConcurrentHashMap<String, Boolean>();
 
-            thread.join();
+            (new Thread(new FileAnalyzer(fileToAnalyzedQueue, urlToAnalyzeQueue))).start();
+
+            //Thread thread  = (new Thread(new FileDownloader(queue)));
+            //thread.start();
+            (new Thread(new FileDownloader(urlToDownloadQueue,fileToAnalyzedQueue))).start();
+
+            (new Thread(new UrlAnalyzer(urlToAnalyzeQueue,urlToDownloadQueue,hashMap))).start();
+
+            while(! Thread.interrupted()) {
+                BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                System.out.print("Enter Url:");
+                String s = br.readLine();
+                urlToAnalyzeQueue.put(s);
+            }
+
+            //thread.join();
         } catch (IOException ex) {
             ex.printStackTrace();
         } catch (InterruptedException e) {

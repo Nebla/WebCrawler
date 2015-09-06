@@ -13,34 +13,27 @@ import java.util.concurrent.BlockingQueue;
  */
 public class FileAnalyzer implements Runnable {
 
-    private BlockingQueue<String> analizedUrlQueue;
+    private BlockingQueue<String> urlToAnalyzeQueue;
 
-    public FileAnalyzer(BlockingQueue<String> urlQueue) {
-        analizedUrlQueue = urlQueue;
+    private BlockingQueue<Pair<String, String>> fileToAnalyzedQueue;
+
+    public FileAnalyzer(BlockingQueue<Pair<String, String>> fileQueue, BlockingQueue<String> urlQueue) {
+        urlToAnalyzeQueue = urlQueue;
+        fileToAnalyzedQueue = fileQueue;
     }
 
     public void run() {
-        System.out.println("Hello from a thread!");
-        try {
-            analyzeFile("Downloads/Clarín.html", "http://www.clarin.com");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        while (!Thread.interrupted()) {
+            try {
+                Pair<String, String> file = fileToAnalyzedQueue.take();
+                System.out.println("Analyzing url: "+file.getFirst());
+                analyzeFile(file.getFirst(), file.getSecond());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
         }
-        //analyzeFile("Downloads/www.clarin.com","www.clarin.com");
     }
-
-    /*public static void main(String args[]) {
-        (new Thread(new FileAnalyzer())).start();
-    }*/
-
-    /*public static void main(String[] args) {
-
-        System.out.println("Hello World!");
-
-        analyzeFile("Downloads/www.clarin.com","www.clarin.com");
-    }*/
-
 
     public void analyzeFile (String fileName, String url) throws InterruptedException {
 
@@ -87,8 +80,8 @@ public class FileAnalyzer implements Runnable {
                     finalImgUrl = url+ "/" + u.normalize().toString();
                 }
 
-                System.out.println(finalImgUrl);
-                analizedUrlQueue.put(finalImgUrl);
+                //System.out.println(finalImgUrl);
+                urlToAnalyzeQueue.put(finalImgUrl);
             }
         }
 
@@ -114,8 +107,8 @@ public class FileAnalyzer implements Runnable {
                     finalLinkUrl = url+ "/" + u.normalize().toString();
                 }
 
-                System.out.println(finalLinkUrl);
-                analizedUrlQueue.put(finalLinkUrl);
+                //System.out.println(finalLinkUrl);
+                urlToAnalyzeQueue.put(finalLinkUrl);
             }
         }
     }
