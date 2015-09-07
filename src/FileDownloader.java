@@ -1,8 +1,5 @@
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.util.concurrent.BlockingQueue;
@@ -19,27 +16,17 @@ public class FileDownloader implements Runnable {
     }
 
     public void run() {
-
         while (!Thread.interrupted()) {
 
             try {
                 String url = urlToDownloadQueue.take();
                 System.out.println("Downloading "+url);
                 downloadFile(url, "Downloads");
-
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-
     }
-
-    /*public static void main(String[] args) {
-
-        System.out.println("Hello World!");
-
-        fileDownload("http://www.clarin.com", "Downloads");
-    }*/
 
     private void downloadFile(String fAddress, String destinationDir) throws InterruptedException {
         int slashIndex = fAddress.lastIndexOf('/');
@@ -75,8 +62,6 @@ public class FileDownloader implements Runnable {
                         outStream.write(buf, 0, byteRead);
                         byteWritten += byteRead;
                     }
-                    //System.out.println("Downloaded Successfully.");
-                    //System.out.println("File name:\"" + localFileName + "\"\nNo ofbytes :" + byteWritten);
 
                     String fileType = Files.probeContentType(FileSystems.getDefault().getPath(destinationDir, localFileName));
                     if (fileType.equals("text/html")) {
@@ -110,13 +95,4 @@ public class FileDownloader implements Runnable {
             }
         }
     }
-
-    /*private void fileDownload(String fAddress, String destinationDir) throws InterruptedException{
-        int slashIndex = fAddress.lastIndexOf('/');
-        int periodIndex = fAddress.lastIndexOf('.');
-
-        String fileName = fAddress.substring(slashIndex + 1);
-        downloadfileUrl(fAddress, fileName, destinationDir);
-
-    }*/
 }

@@ -59,6 +59,42 @@ public class FileAnalyzer implements Runnable {
             e.printStackTrace();
         }
 
+        // Images
+        getResource(url, htmlDoc, HTML.Tag.IMG, HTML.Attribute.SRC);
+
+        // Https
+        getResource(url, htmlDoc, HTML.Tag.A, HTML.Attribute.HREF);
+
+    }
+
+    private void getResource(String url, HTMLDocument htmlDoc, HTML.Tag tag, HTML.Attribute attribute) throws InterruptedException {
+        for (HTMLDocument.Iterator iterator = htmlDoc.getIterator(tag); iterator.isValid(); iterator.next()) {
+            AttributeSet attributes = iterator.getAttributes();
+            String src = (String) attributes.getAttribute(attribute);
+
+            if (src != null) {
+
+                URI u = null;
+                try {
+                    u = new URI(src);
+                } catch (URISyntaxException e) {
+                    e.printStackTrace();
+                }
+
+                String finalImgUrl = null;
+                if (u.isAbsolute()) {
+                    finalImgUrl = src;
+                } else {
+                    finalImgUrl = url + "/" + u.normalize().toString();
+                }
+
+                //System.out.println(finalImgUrl);
+                urlToAnalyzeQueue.put(finalImgUrl);
+            }
+        }
+    }
+
+    /*private void getImages(String url, HTMLDocument htmlDoc) {
         for (HTMLDocument.Iterator iterator = htmlDoc.getIterator(HTML.Tag.IMG); iterator.isValid(); iterator.next()) {
             AttributeSet attributes = iterator.getAttributes();
             String imgSrc = (String) attributes.getAttribute(HTML.Attribute.SRC);
@@ -83,8 +119,11 @@ public class FileAnalyzer implements Runnable {
                 //System.out.println(finalImgUrl);
                 urlToAnalyzeQueue.put(finalImgUrl);
             }
-        }
 
+        }
+    }*/
+
+    /*private void getHttps(String url, HTMLDocument htmlDoc) throws InterruptedException {
         for (HTMLDocument.Iterator iterator = htmlDoc.getIterator(HTML.Tag.A); iterator.isValid(); iterator.next()) {
             AttributeSet attributes = iterator.getAttributes();
             String linkSrc = (String) attributes.getAttribute(HTML.Attribute.HREF);
@@ -111,5 +150,7 @@ public class FileAnalyzer implements Runnable {
                 urlToAnalyzeQueue.put(finalLinkUrl);
             }
         }
-    }
+    }*/
+
+
 }
