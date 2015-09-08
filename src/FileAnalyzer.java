@@ -13,11 +13,14 @@ import java.util.concurrent.BlockingQueue;
  */
 public class FileAnalyzer implements Runnable {
 
+    private int id;
+
     private BlockingQueue<String> urlToAnalyzeQueue;
 
     private BlockingQueue<Pair<String, String>> fileToAnalyzedQueue;
 
-    public FileAnalyzer(BlockingQueue<Pair<String, String>> fileQueue, BlockingQueue<String> urlQueue) {
+    public FileAnalyzer(int id, BlockingQueue<Pair<String, String>> fileQueue, BlockingQueue<String> urlQueue) {
+        id = id;
         urlToAnalyzeQueue = urlQueue;
         fileToAnalyzedQueue = fileQueue;
     }

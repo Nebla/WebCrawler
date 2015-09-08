@@ -43,31 +43,20 @@ public class Launcher {
 
             ConcurrentHashMap<String,Boolean> hashMap = new ConcurrentHashMap<String, Boolean>();
 
-
             int numberOfFileAnalyzer = Integer.parseInt(prop.getProperty("fileAnalyzer"));
-            ExecutorService executor = Executors.newFixedThreadPool(numberOfFileAnalyzer);
             for (int i = 0; i < numberOfFileAnalyzer; ++i) {
-                Runnable worker = new FileAnalyzer(fileToAnalyzedQueue, urlToAnalyzeQueue);
-                executor.execute(worker);
+                (new Thread(new FileAnalyzer(i, fileToAnalyzedQueue, urlToAnalyzeQueue))).start();
             }
-            executor.shutdown();
 
             int numberOfUrlAnalyzer = Integer.parseInt(prop.getProperty("urlAnalyzer"));
-            executor = Executors.newFixedThreadPool(numberOfUrlAnalyzer);
             for (int i = 0; i < numberOfUrlAnalyzer; ++i) {
-                Runnable worker = new UrlAnalyzer(urlToAnalyzeQueue,urlToDownloadQueue,hashMap);
-                executor.execute(worker);
+                (new Thread(new FileDownloader(urlToDownloadQueue,fileToAnalyzedQueue))).start();
             }
-            executor.shutdown();
 
             int numberOfFileDownloader = Integer.parseInt(prop.getProperty("fileDownloader"));
-            executor = Executors.newFixedThreadPool(numberOfFileDownloader);
             for (int i = 0; i < numberOfFileDownloader; ++i) {
-                Runnable worker = new FileDownloader(urlToDownloadQueue,fileToAnalyzedQueue);
-                executor.execute(worker);
+                (new Thread(new UrlAnalyzer(urlToAnalyzeQueue,urlToDownloadQueue,hashMap))).start();
             }
-            executor.shutdown();
-
 
             //(new Thread(new FileAnalyzer(fileToAnalyzedQueue, urlToAnalyzeQueue))).start();
             //(new Thread(new FileDownloader(urlToDownloadQueue,fileToAnalyzedQueue))).start();
