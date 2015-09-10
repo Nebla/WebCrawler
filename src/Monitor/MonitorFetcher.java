@@ -1,11 +1,9 @@
 package Monitor;
 
-import Crawler.Pair;
-
 import java.util.concurrent.BlockingQueue;
 
 /**
- * Created by fdv on 09/09/15.
+ * Created by adrian on 09/09/15.
  */
 public class MonitorFetcher implements Runnable {
 

@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.Date;
 
 /**
- * Created by fdv on 09/09/15.
+ * Created by adrian on 09/09/15.
  */
 public class MonitorWriter implements Runnable {
 

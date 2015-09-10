@@ -51,7 +51,7 @@ public class UrlAnalyzer implements Runnable {
                         this.urlLoggerQueue.put(url.getUrl());
                         urlToDownloadQueue.put(url);
                     } else {
-                        // url already downloaded
+                        // Url already downloaded
                         System.out.println("Url already downloaded " + url.getUrl());
                     }
 

@@ -45,41 +45,13 @@ public class FileAnalyzer implements Runnable {
                 this.monitorQueue.put(new ThreadUpdateMessage(new ThreadState(ThreadState.Type.HTML_ANALYZER, this.threadId, ThreadState.Status.BLOCKED)));
                 Pair<String, UrlMessage> file = fileToAnalyzedQueue.take();
                 this.monitorQueue.put(new ThreadUpdateMessage(new ThreadState(ThreadState.Type.HTML_ANALYZER, this.threadId, ThreadState.Status.WORKING)));
-                //System.out.println("Analyzing url: "+file.getFirst());
+                System.out.println("Analyzing file: "+file.getFirst());
                 analyzeFile(file.getFirst(), file.getSecond());
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
         }
     }
-
-    /*public  List<String>extractLinks(String filename) throws IOException {
-        final ArrayList<String> result = new ArrayList<String>();
-
-        File in = new File(filename);
-        Document doc = Jsoup.parse(in, null);
-
-        Elements links = doc.select("a[href]");
-        Elements media = doc.select("[src]");
-        Elements imports = doc.select("link[href]");
-
-        // href ...
-        for (Element link : links) {
-            result.add(link.attr("abs:href"));
-        }
-
-        // img ...
-        for (Element src : media) {
-            result.add(src.attr("abs:src"));
-        }
-
-        // js, css, ...
-        for (Element link : imports) {
-            result.add(link.attr("abs:href"));
-        }
-        return result;
-    }*/
 
     public void analyzeFile (String fileName, UrlMessage url) throws InterruptedException {
         InputStream is = null;
@@ -107,10 +79,7 @@ public class FileAnalyzer implements Runnable {
         getResource(url, htmlDoc, HTML.Tag.A, HTML.Attribute.HREF);
         getResource(url, htmlDoc, HTML.Tag.LINK, HTML.Attribute.HREF);
         getResource(url, htmlDoc, HTML.Tag.SCRIPT, HTML.Attribute.SRC);
-
-
     }
-
 
     private void getResource(UrlMessage url, HTMLDocument htmlDoc, HTML.Tag tag, HTML.Attribute attribute) throws InterruptedException {
         for (HTMLDocument.Iterator iterator = htmlDoc.getIterator(tag); iterator.isValid(); iterator.next()) {
@@ -136,12 +105,10 @@ public class FileAnalyzer implements Runnable {
                     }
 
                     urlToAnalyzeQueue.put(new UrlMessage(url.getIteration(), finalUrl));
-                }catch (URISyntaxException e) {
+                } catch (URISyntaxException e) {
                         e.printStackTrace();
-                    }
-
+                }
             }
         }
     }
-
 }

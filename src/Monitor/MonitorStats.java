@@ -2,7 +2,6 @@ package Monitor;
 
 import Crawler.ThreadState;
 
-import java.io.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -29,25 +28,12 @@ public class MonitorStats {
     }
 
     public synchronized void initMonitorStats (Integer urlAnalyzers, Integer fileAnalyzers, Integer fileDownloaders) {
-            // I synchronize this block to be consistent, in that every public method should be atomic, but it's not necessary
-            /*String configFile = "Config/Config.properties";
-            Properties prop = new Properties();
-            InputStream input;
-            try {
-                input = new FileInputStream(configFile);
-                prop.load(input);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }*/
+        // I synchronize this block to be consistent, in that every public method should be atomic, but it's not necessary
+        this.initializeStats(fileAnalyzerState, fileAnalyzers);
+        this.initializeStats(fileDownloaderState, fileDownloaders);
+        this.initializeStats(urlAnalyzerState, urlAnalyzers);
 
-            this.initializeStats(fileAnalyzerState, fileAnalyzers);
-            this.initializeStats(fileDownloaderState, fileDownloaders);
-            this.initializeStats(urlAnalyzerState, urlAnalyzers);
-
-            urlsCount = 0;
-
+        urlsCount = 0;
     }
 
     private void initializeStats(HashMap<Integer, ThreadState.Status> map, Integer amount) {
@@ -74,18 +60,15 @@ public class MonitorStats {
     }
 
     public synchronized void increaseAnalyzedUrl() {
-            urlsCount++;
-
+        urlsCount++;
     }
 
     public synchronized void increaseFileType(String fileType) {
-            if (fileTypes.containsKey(fileType)) {
-                fileTypes.put(fileType, fileTypes.get(fileType) + 1);
-            }
-            else {
-                fileTypes.put(fileType, 1);
-           }
-
+        if (fileTypes.containsKey(fileType)) {
+            fileTypes.put(fileType, fileTypes.get(fileType) + 1);
+        } else {
+            fileTypes.put(fileType, 1);
+        }
     }
 
     public synchronized String getFormattedStats () {

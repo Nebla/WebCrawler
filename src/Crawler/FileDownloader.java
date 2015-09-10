@@ -4,7 +4,6 @@ import Monitor.FileTypeUpdateMessage;
 import Monitor.MonitorMessage;
 import Monitor.ThreadUpdateMessage;
 
-import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.*;
 import java.nio.file.FileSystems;
@@ -28,7 +27,6 @@ public class FileDownloader implements Runnable {
     }
 
     public void run() {
-
         try {
             this.monitorQueue.put(new ThreadUpdateMessage(new ThreadState(ThreadState.Type.FILE_DOWNLOADER, this.threadId, ThreadState.Status.STARTING)));
         } catch (InterruptedException e) {
@@ -36,7 +34,6 @@ public class FileDownloader implements Runnable {
         }
 
         while (!Thread.interrupted()) {
-
             try {
                 this.monitorQueue.put(new ThreadUpdateMessage(new ThreadState(ThreadState.Type.FILE_DOWNLOADER, this.threadId, ThreadState.Status.BLOCKED)));
                 UrlMessage url = urlToDownloadQueue.take();
@@ -51,6 +48,7 @@ public class FileDownloader implements Runnable {
     private void downloadFile(UrlMessage message, String destinationDir) throws InterruptedException {
         String localFileName;
         int slashIndex = message.getUrl().lastIndexOf('/');
+        // We should remode tha last / from the url because we use the string next to the slash to use as file name
         if (slashIndex == message.getUrl().length() - 1) {
             String noLastSlashUrl = message.getUrl().substring(0,message.getUrl().length() - 1);
             slashIndex = noLastSlashUrl.lastIndexOf('/');
@@ -74,7 +72,7 @@ public class FileDownloader implements Runnable {
             try {
                 URL url;
                 byte[] buf;
-                int byteRead = 0;
+                int byteRead;
                 url = new URL(message.getUrl());
                 connection = url.openConnection();
 

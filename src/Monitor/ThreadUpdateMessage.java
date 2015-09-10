@@ -1,9 +1,6 @@
 package Monitor;
 
 import Crawler.ThreadState;
-import sun.management.snmp.jvminstr.JvmThreadInstanceEntryImpl;
-
-import Monitor.MonitorStats;
 
 /**
  * Created by adrian on 09/09/15.
