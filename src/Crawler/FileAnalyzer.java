@@ -126,11 +126,13 @@ public class FileAnalyzer implements Runnable {
                     if (u.isAbsolute()) {
                         finalUrl = src;
                     } else {
-                        //if (u.getHost().length() > 0) {
-                        //    finalUrl = u.normalize().toString();
-                        //} else {
+                        if (src.startsWith("//")) {
+                            int index = url.getUrl().indexOf(":");
+                            String protocol = url.getUrl().substring(0,index);
+                            finalUrl = protocol + ":" + src;
+                        } else {
                             finalUrl = u.resolve(url.getUrl()).normalize().toString();
-                        //}
+                        }
                     }
 
                     urlToAnalyzeQueue.put(new UrlMessage(url.getIteration(), finalUrl));
@@ -141,100 +143,5 @@ public class FileAnalyzer implements Runnable {
             }
         }
     }
-
-    /*private void getImages(String url, HTMLDocument htmlDoc) {
-        for (HTMLDocument.Iterator iterator = htmlDoc.getIterator(HTML.Tag.IMG); iterator.isValid(); iterator.next()) {
-            AttributeSet attributes = iterator.getAttributes();
-            String imgSrc = (String) attributes.getAttribute(HTML.Attribute.SRC);
-
-            if (imgSrc != null && (imgSrc.endsWith(".jpg") || (imgSrc.endsWith(".png")) || (imgSrc.endsWith(".jpeg")) || (imgSrc.endsWith(".bmp")) || (imgSrc.endsWith(".ico")))) {
-
-                URI u = null;
-                try {
-                    u = new URI(imgSrc);
-                } catch (URISyntaxException e) {
-                    e.printStackTrace();
-                }
-
-                String finalImgUrl = null;
-                if(u.isAbsolute()) {
-                    finalImgUrl = imgSrc;
-                }
-                else {
-                    finalImgUrl = url+ "/" + u.normalize().toString();
-                }
-
-                //System.out.println(finalImgUrl);
-                urlToAnalyzeQueue.put(finalImgUrl);
-            }
-
-        }
-    }*/
-
-    /*private void getHttps(String url, HTMLDocument htmlDoc) throws InterruptedException {
-        for (HTMLDocument.Iterator iterator = htmlDoc.getIterator(HTML.Tag.A); iterator.isValid(); iterator.next()) {
-            AttributeSet attributes = iterator.getAttributes();
-            String linkSrc = (String) attributes.getAttribute(HTML.Attribute.HREF);
-
-            if (linkSrc != null) {
-                // Check if it starts with a / is a relative address
-
-                URI u = null;
-                try {
-                    u = new URI(linkSrc);
-                } catch (URISyntaxException e) {
-                    e.printStackTrace();
-                }
-
-                String finalLinkUrl = null;
-                if(u.isAbsolute()) {
-                    finalLinkUrl = linkSrc;
-                }
-                else {
-                    finalLinkUrl = url+ "/" + u.normalize().toString();
-                }
-
-                //System.out.println(finalLinkUrl);
-                urlToAnalyzeQueue.put(finalLinkUrl);
-            }
-        }
-    }*/
-
-    /*
-
-     String s = "";
-
-
-        //Create object of FileReader
-        FileReader inputFile = null;
-        try {
-            inputFile = new FileReader(fileName);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        //Instantiate the BufferedReader Class
-        BufferedReader bufferReader = new BufferedReader(inputFile);
-
-        //Variable to hold the one line data
-        String line;
-
-        // Read file line by line and print on the console
-        try {
-            while ((line = bufferReader.readLine()) != null)   {
-                s = s + line + "\n";
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        //Close the buffer reader
-        try {
-            bufferReader.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        System.out.println(s);*/
-
 
 }
