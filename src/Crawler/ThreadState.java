@@ -1,7 +1,5 @@
 package Crawler;
 
-import java.util.Date;
-
 /**
  * Created by adrian on 08/09/15.
  */
@@ -16,8 +14,7 @@ public class ThreadState {
         UNKNOWN,
         STARTING,
         BLOCKED,
-        WORKING,
-        FINISHED
+        WORKING
     }
 
     public enum Type {

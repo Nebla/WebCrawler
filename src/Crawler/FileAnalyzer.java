@@ -1,5 +1,8 @@
 package Crawler;
 
+import Monitor.MonitorMessage;
+import Monitor.ThreadUpdateMessage;
+
 import javax.swing.text.AttributeSet;
 import javax.swing.text.html.HTML;
 import javax.swing.text.html.HTMLDocument;
@@ -9,29 +12,39 @@ import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.BlockingQueue;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by adrian on 04/09/15.
  */
 public class FileAnalyzer implements Runnable {
 
-    private int id;
-
+    private Integer threadId;
+    private BlockingQueue<MonitorMessage> monitorQueue;
     private BlockingQueue<String> urlToAnalyzeQueue;
-
     private BlockingQueue<Pair<String, String>> fileToAnalyzedQueue;
 
-    public FileAnalyzer(int id, BlockingQueue<Pair<String, String>> fileQueue, BlockingQueue<String> urlQueue) {
-        id = id;
-        urlToAnalyzeQueue = urlQueue;
-        fileToAnalyzedQueue = fileQueue;
+    public FileAnalyzer(Integer threadId, BlockingQueue<Pair<String, String>> fileQueue, BlockingQueue<String> urlQueue, BlockingQueue<MonitorMessage> monitorQueue) {
+        this.threadId = threadId;
+        this.monitorQueue = monitorQueue;
+        this.urlToAnalyzeQueue = urlQueue;
+        this.fileToAnalyzedQueue = fileQueue;
     }
 
     public void run() {
+        try {
+            this.monitorQueue.put(new ThreadUpdateMessage(new ThreadState(ThreadState.Type.HTML_ANALYZER, this.threadId, ThreadState.Status.STARTING)));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         while (!Thread.interrupted()) {
             try {
+                this.monitorQueue.put(new ThreadUpdateMessage(new ThreadState(ThreadState.Type.HTML_ANALYZER, this.threadId, ThreadState.Status.BLOCKED)));
                 Pair<String, String> file = fileToAnalyzedQueue.take();
-                System.out.println("Analyzing url: "+file.getFirst());
+                this.monitorQueue.put(new ThreadUpdateMessage(new ThreadState(ThreadState.Type.HTML_ANALYZER, this.threadId, ThreadState.Status.WORKING)));
+                //System.out.println("Analyzing url: "+file.getFirst());
                 analyzeFile(file.getFirst(), file.getSecond());
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -41,7 +54,6 @@ public class FileAnalyzer implements Runnable {
     }
 
     public void analyzeFile (String fileName, String url) throws InterruptedException {
-
         InputStream is = null;
         try {
             is = new FileInputStream(fileName);
@@ -51,7 +63,6 @@ public class FileAnalyzer implements Runnable {
 
         InputStreamReader isr = new InputStreamReader(is);
         BufferedReader br = new BufferedReader(isr);
-
 
         HTMLEditorKit htmlKit = new HTMLEditorKit();
         HTMLDocument htmlDoc = (HTMLDocument) htmlKit.createDefaultDocument();
@@ -86,15 +97,16 @@ public class FileAnalyzer implements Runnable {
                     e.printStackTrace();
                 }
 
-                String finalImgUrl = null;
-                if (u.isAbsolute()) {
-                    finalImgUrl = src;
-                } else {
-                    finalImgUrl = url + "/" + u.normalize().toString();
-                }
+                if (u != null) {
+                    String finalUrl;
+                    if (u.isAbsolute()) {
+                        finalUrl = src;
+                    } else {
+                        finalUrl = url + "/" + u.normalize().toString();
+                    }
 
-                //System.out.println(finalImgUrl);
-                urlToAnalyzeQueue.put(finalImgUrl);
+                    urlToAnalyzeQueue.put(finalUrl);
+                }
             }
         }
     }

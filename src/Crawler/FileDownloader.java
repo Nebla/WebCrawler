@@ -1,5 +1,9 @@
 package Crawler;
 
+import Monitor.FileTypeUpdateMessage;
+import Monitor.MonitorMessage;
+import Monitor.ThreadUpdateMessage;
+
 import java.io.*;
 import java.net.*;
 import java.nio.file.FileSystems;
@@ -8,21 +12,35 @@ import java.util.concurrent.BlockingQueue;
 
 public class FileDownloader implements Runnable {
 
+    private Integer threadId;
+
+    private BlockingQueue<MonitorMessage> monitorQueue;
+
     private BlockingQueue<String> urlToDownloadQueue;
 
     private BlockingQueue<Pair<String, String>> fileToAnalyzeQueue;
 
-    public FileDownloader(BlockingQueue<String> downloadQueue, BlockingQueue<Pair<String, String>> fileAnalyzeQueue) {
-        urlToDownloadQueue = downloadQueue;
-        fileToAnalyzeQueue = fileAnalyzeQueue;
+    public FileDownloader(Integer threadId, BlockingQueue<String> downloadQueue, BlockingQueue<Pair<String, String>> fileAnalyzeQueue, BlockingQueue<MonitorMessage> monitorQueue) {
+        this.threadId = threadId;
+        this.monitorQueue = monitorQueue;
+        this.urlToDownloadQueue = downloadQueue;
+        this.fileToAnalyzeQueue = fileAnalyzeQueue;
     }
 
     public void run() {
+
+        try {
+            this.monitorQueue.put(new ThreadUpdateMessage(new ThreadState(ThreadState.Type.FILE_DOWNLOADER, this.threadId, ThreadState.Status.STARTING)));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         while (!Thread.interrupted()) {
 
             try {
+                this.monitorQueue.put(new ThreadUpdateMessage(new ThreadState(ThreadState.Type.FILE_DOWNLOADER, this.threadId, ThreadState.Status.BLOCKED)));
                 String url = urlToDownloadQueue.take();
-                System.out.println("Downloading "+url);
+                this.monitorQueue.put(new ThreadUpdateMessage(new ThreadState(ThreadState.Type.FILE_DOWNLOADER, this.threadId, ThreadState.Status.WORKING)));
                 downloadFile(url, "Downloads");
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -44,32 +62,29 @@ public class FileDownloader implements Runnable {
             }
 
             OutputStream outStream = null;
-            HttpURLConnection connection = null;
+            HttpURLConnection connection;
             InputStream inStream = null;
             try {
                 URL url;
                 byte[] buf;
-                int byteRead, byteWritten = 0;
-
+                int byteRead = 0;
                 url = new URL(fAddress);
-
-                outStream = new BufferedOutputStream(new FileOutputStream(destinationDir + "/" + localFileName));
                 connection = (HttpURLConnection) url.openConnection();
 
-                if (connection.getResponseCode() == 200) {
-                    inStream = connection.getInputStream();
+                outStream = new BufferedOutputStream(new FileOutputStream(destinationDir + "/" + localFileName));
+                inStream = connection.getInputStream();
 
-                    buf = new byte[512];
-                    while ((byteRead = inStream.read(buf)) != -1) {
-                        outStream.write(buf, 0, byteRead);
-                        byteWritten += byteRead;
-                    }
-
-                    String fileType = Files.probeContentType(FileSystems.getDefault().getPath(destinationDir, localFileName));
-                    if (fileType.equals("text/html")) {
-                        fileToAnalyzeQueue.put(new Pair<String, String>(destinationDir + "/" + localFileName, fAddress));
-                    }
+                buf = new byte[512];
+                while ((byteRead = inStream.read(buf)) != -1) {
+                    outStream.write(buf, 0, byteRead);
                 }
+
+                String fileType = Files.probeContentType(FileSystems.getDefault().getPath(destinationDir, localFileName));
+                if (fileType.equals("text/html")) {
+                    fileToAnalyzeQueue.put(new Pair<String, String>(destinationDir + "/" + localFileName, fAddress));
+                }
+
+                this.monitorQueue.put(new FileTypeUpdateMessage(fileType));
 
             } catch (MalformedURLException e) {
                 e.printStackTrace();
