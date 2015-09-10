@@ -1,3 +1,9 @@
+import Crawler.FileAnalyzer;
+import Crawler.FileDownloader;
+import Crawler.Pair;
+import Crawler.UrlAnalyzer;
+import Monitor.MonitorMessage;
+
 import java.io.*;
 import java.util.Properties;
 import java.util.concurrent.*;
@@ -37,6 +43,11 @@ public class Launcher {
 
             int queueSize =  Integer.parseInt(prop.getProperty("queueSize"));
 
+            BlockingQueue<MonitorMessage> monitorQueue = new ArrayBlockingQueue<MonitorMessage>(queueSize);
+
+
+
+
             BlockingQueue<String> urlToAnalyzeQueue = new ArrayBlockingQueue<String>(queueSize);
             BlockingQueue<Pair<String, String>> fileToAnalyzedQueue = new ArrayBlockingQueue<Pair<String, String>>(queueSize);
             BlockingQueue<String> urlToDownloadQueue = new ArrayBlockingQueue<String>(queueSize);
@@ -58,9 +69,9 @@ public class Launcher {
                 (new Thread(new UrlAnalyzer(urlToAnalyzeQueue,urlToDownloadQueue,hashMap))).start();
             }
 
-            //(new Thread(new FileAnalyzer(fileToAnalyzedQueue, urlToAnalyzeQueue))).start();
-            //(new Thread(new FileDownloader(urlToDownloadQueue,fileToAnalyzedQueue))).start();
-            //(new Thread(new UrlAnalyzer(urlToAnalyzeQueue,urlToDownloadQueue,hashMap))).start();
+            //(new Thread(new Crawler.FileAnalyzer(fileToAnalyzedQueue, urlToAnalyzeQueue))).start();
+            //(new Thread(new Crawler.FileDownloader(urlToDownloadQueue,fileToAnalyzedQueue))).start();
+            //(new Thread(new Crawler.UrlAnalyzer(urlToAnalyzeQueue,urlToDownloadQueue,hashMap))).start();
 
             while(! Thread.interrupted()) {
                 BufferedReader br = new BufferedReader(new InputStreamReader(System.in));

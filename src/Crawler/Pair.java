@@ -1,3 +1,5 @@
+package Crawler;
+
 /**
  * Created by adrian on 06/09/15.
  */

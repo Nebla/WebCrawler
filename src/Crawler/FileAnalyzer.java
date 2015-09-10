@@ -1,3 +1,5 @@
+package Crawler;
+
 import javax.swing.text.AttributeSet;
 import javax.swing.text.html.HTML;
 import javax.swing.text.html.HTMLDocument;
