@@ -1,8 +1,5 @@
 import Crawler.*;
-import Monitor.MonitorFetcher;
-import Monitor.MonitorMessage;
-import Monitor.MonitorStats;
-import Monitor.MonitorWriter;
+import Monitor.*;
 
 import java.io.*;
 import java.net.URI;
@@ -39,49 +36,48 @@ public class Launcher {
 
             prop.load(input);
 
-            System.out.println(prop.getProperty("fileAnalyzer"));
-            System.out.println(prop.getProperty("fileDownloader"));
-            System.out.println(prop.getProperty("urlAnalyzer"));
-
             int queueSize =  Integer.parseInt(prop.getProperty("queueSize"));
 
+            // Monitor
             MonitorStats stats = new MonitorStats();
             stats.initMonitorStats();
-
             BlockingQueue<MonitorMessage> monitorQueue = new ArrayBlockingQueue<MonitorMessage>(queueSize);
             MonitorWriter writer = new MonitorWriter(stats);
             writer.initializeMonitor(prop.getProperty("logFile"), Integer.parseInt(prop.getProperty("logInterval")),Integer.parseInt(prop.getProperty("flushInterval")));
             (new Thread(writer)).start();
-
             MonitorFetcher fetcher = new MonitorFetcher(stats, monitorQueue);
             (new Thread(fetcher)).start();
 
+            // Url Logger
+            BlockingQueue<String> urlLoggerQueue = new ArrayBlockingQueue<String>(queueSize);
+            UrlLogger urlLogger = new UrlLogger(urlLoggerQueue);
+            urlLogger.initializeLogger(prop.getProperty("urlLogFile"));
+            new Thread(urlLogger).start();
 
+            // Crawler Queues
             BlockingQueue<UrlMessage> urlToAnalyzeQueue = new ArrayBlockingQueue<UrlMessage>(queueSize);
             BlockingQueue<Pair<String, UrlMessage>> fileToAnalyzedQueue = new ArrayBlockingQueue<Pair<String, UrlMessage>>(queueSize);
             BlockingQueue<UrlMessage> urlToDownloadQueue = new ArrayBlockingQueue<UrlMessage>(queueSize);
 
             ConcurrentHashMap<String,Boolean> hashMap = new ConcurrentHashMap<String, Boolean>();
 
+            // Crawler worers
             int numberOfFileAnalyzer = Integer.parseInt(prop.getProperty("fileAnalyzer"));
             for (int i = 0; i < numberOfFileAnalyzer; ++i) {
                 (new Thread(new FileAnalyzer(i, fileToAnalyzedQueue, urlToAnalyzeQueue, monitorQueue))).start();
             }
 
             int maxIterations = Integer.parseInt(prop.getProperty("iterations"));
-            int numberOfUrlAnalyzer = Integer.parseInt(prop.getProperty("urlAnalyzer"));
+            int numberOfUrlAnalyzer = Integer.parseInt(prop.getProperty("fileDownloader"));
             for (int i = 0; i < numberOfUrlAnalyzer; ++i) {
                 (new Thread(new FileDownloader(i, maxIterations, urlToDownloadQueue,fileToAnalyzedQueue, monitorQueue))).start();
             }
 
-            int numberOfFileDownloader = Integer.parseInt(prop.getProperty("fileDownloader"));
+            int numberOfFileDownloader = Integer.parseInt(prop.getProperty("urlAnalyzer"));
             for (int i = 0; i < numberOfFileDownloader; ++i) {
-                (new Thread(new UrlAnalyzer(i, urlToAnalyzeQueue,urlToDownloadQueue,hashMap, monitorQueue))).start();
+                (new Thread(new UrlAnalyzer(i, urlToAnalyzeQueue,urlToDownloadQueue,hashMap, monitorQueue, urlLoggerQueue))).start();
             }
 
-            //(new Thread(new Crawler.FileAnalyzer(fileToAnalyzedQueue, urlToAnalyzeQueue))).start();
-            //(new Thread(new Crawler.FileDownloader(urlToDownloadQueue,fileToAnalyzedQueue))).start();
-            //(new Thread(new Crawler.UrlAnalyzer(urlToAnalyzeQueue,urlToDownloadQueue,hashMap))).start();
 
             while(! Thread.interrupted()) {
                 BufferedReader br = new BufferedReader(new InputStreamReader(System.in));

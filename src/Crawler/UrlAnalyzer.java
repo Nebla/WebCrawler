@@ -15,15 +15,17 @@ public class UrlAnalyzer implements Runnable {
 
     private Integer threadId;
     private BlockingQueue<MonitorMessage> monitorQueue;
+    private BlockingQueue<String> urlLoggerQueue;
 
     private BlockingQueue<UrlMessage> urlToAnalyzeQueue;
     private BlockingQueue<UrlMessage> urlToDownloadQueue;
 
     private ConcurrentHashMap<String,Boolean> analyzedUrls;
 
-    public UrlAnalyzer(Integer threadId, BlockingQueue<UrlMessage> analyzeQueue, BlockingQueue<UrlMessage> downloadQueue, ConcurrentHashMap<String,Boolean> map, BlockingQueue<MonitorMessage> monitorQueue) {
+    public UrlAnalyzer(Integer threadId, BlockingQueue<UrlMessage> analyzeQueue, BlockingQueue<UrlMessage> downloadQueue, ConcurrentHashMap<String,Boolean> map, BlockingQueue<MonitorMessage> monitorQueue, BlockingQueue<String> urlLoggerQueue) {
         this.threadId = threadId;
         this.monitorQueue = monitorQueue;
+        this.urlLoggerQueue = urlLoggerQueue;
         this.urlToAnalyzeQueue = analyzeQueue;
         this.urlToDownloadQueue = downloadQueue;
         this.analyzedUrls = map;
@@ -46,6 +48,7 @@ public class UrlAnalyzer implements Runnable {
                 System.out.println("Analyzing url: "+url.getUrl());
                     if (analyzedUrls.putIfAbsent(url.getUrl(), true) == null) {
                         System.out.println("Url NOT downloaded " + url.getUrl());
+                        this.urlLoggerQueue.put(url.getUrl());
                         urlToDownloadQueue.put(url);
                     } else {
                         // url already downloaded
