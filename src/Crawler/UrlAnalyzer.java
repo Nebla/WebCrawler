@@ -15,11 +15,13 @@ public class UrlAnalyzer implements Runnable {
 
     private Integer threadId;
     private BlockingQueue<MonitorMessage> monitorQueue;
-    private BlockingQueue<String> urlToAnalyzeQueue;
-    private BlockingQueue<String> urlToDownloadQueue;
+
+    private BlockingQueue<UrlMessage> urlToAnalyzeQueue;
+    private BlockingQueue<UrlMessage> urlToDownloadQueue;
+
     private ConcurrentHashMap<String,Boolean> analyzedUrls;
 
-    public UrlAnalyzer(Integer threadId, BlockingQueue<String> analyzeQueue, BlockingQueue<String> downloadQueue, ConcurrentHashMap<String,Boolean> map, BlockingQueue<MonitorMessage> monitorQueue) {
+    public UrlAnalyzer(Integer threadId, BlockingQueue<UrlMessage> analyzeQueue, BlockingQueue<UrlMessage> downloadQueue, ConcurrentHashMap<String,Boolean> map, BlockingQueue<MonitorMessage> monitorQueue) {
         this.threadId = threadId;
         this.monitorQueue = monitorQueue;
         this.urlToAnalyzeQueue = analyzeQueue;
@@ -38,18 +40,18 @@ public class UrlAnalyzer implements Runnable {
         while (!Thread.interrupted()) {
             try {
                 this.monitorQueue.put(new ThreadUpdateMessage(new ThreadState(ThreadState.Type.URL_ANALYZER, this.threadId, ThreadState.Status.BLOCKED)));
-                String url = urlToAnalyzeQueue.take();
+                UrlMessage url = urlToAnalyzeQueue.take();
                 this.monitorQueue.put(new ThreadUpdateMessage(new ThreadState(ThreadState.Type.URL_ANALYZER, this.threadId, ThreadState.Status.WORKING)));
 
-                System.out.println("Analyzing url: "+url);
+                System.out.println("Analyzing url: "+url.getUrl());
+                    if (analyzedUrls.putIfAbsent(url.getUrl(), true) == null) {
+                        System.out.println("Url NOT downloaded " + url.getUrl());
+                        urlToDownloadQueue.put(url);
+                    } else {
+                        // url already downloaded
+                        System.out.println("Url already downloaded " + url.getUrl());
+                    }
 
-                if (analyzedUrls.putIfAbsent(url, true) == null) {
-                    System.out.println("Url NOT downloaded " + url);
-                    urlToDownloadQueue.put(url);
-                } else {
-                    // url already downloaded
-                    System.out.println("Url already downloaded " + url);
-                }
 
                 this.monitorQueue.put(new UrlIncreaseMessage());
 

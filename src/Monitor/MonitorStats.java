@@ -28,8 +28,7 @@ public class MonitorStats {
         fileDownloaderState = new HashMap<Integer, ThreadState.Status>();
     }
 
-    public void initMonitorStats () {
-        synchronized (this) {
+    public synchronized void initMonitorStats () {
             // I synchronize this block to be consistent, in that every public method should be atomic, but it's not neccesary
             String configFile = "Config/Config.properties";
             Properties prop = new Properties();
@@ -48,7 +47,7 @@ public class MonitorStats {
             this.initializeStats(urlAnalyzerState, Integer.parseInt(prop.getProperty("urlAnalyzer")));
 
             urlsCount = 0;
-        }
+
     }
 
     private void initializeStats(HashMap<Integer, ThreadState.Status> map, Integer amount) {
@@ -57,8 +56,7 @@ public class MonitorStats {
         }
     }
 
-    public void setStatus(ThreadState state) {
-        synchronized (this) {
+    public synchronized void setStatus(ThreadState state) {
             HashMap<Integer, ThreadState.Status> map = null;
             switch (state.getThreadName()) {
                 case URL_ANALYZER:
@@ -72,29 +70,26 @@ public class MonitorStats {
                     break;
             }
             map.put(state.getThreadId(), state.getThreadStatus());
-        }
+
     }
 
-    public void increaseAnalyzedUrl() {
-        synchronized (this) {
+    public synchronized void increaseAnalyzedUrl() {
             urlsCount++;
-        }
+
     }
 
-    public void increaseFileType(String fileType) {
-        synchronized (this) {
+    public synchronized void increaseFileType(String fileType) {
             if (fileTypes.containsKey(fileType)) {
                 fileTypes.put(fileType, fileTypes.get(fileType) + 1);
             }
             else {
                 fileTypes.put(fileType, 1);
-            }
-        }
+           }
+
     }
 
-    public String getFormattedStats () {
+    public synchronized String getFormattedStats () {
         String result;
-        synchronized (this) {
             DateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
             String stringDate = formatter.format(new Date());
 
@@ -103,7 +98,7 @@ public class MonitorStats {
             result = result + this.getThreadStats("Analyzing URL",urlAnalyzerState);
             result = result + this.getThreadStats("Downloading File", fileDownloaderState);
             result = result + this.getThreadStats("Analyzing File",fileAnalyzerState);
-        }
+
         return result;
     }
 

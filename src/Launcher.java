@@ -1,7 +1,4 @@
-import Crawler.FileAnalyzer;
-import Crawler.FileDownloader;
-import Crawler.Pair;
-import Crawler.UrlAnalyzer;
+import Crawler.*;
 import Monitor.MonitorFetcher;
 import Monitor.MonitorMessage;
 import Monitor.MonitorStats;
@@ -60,9 +57,9 @@ public class Launcher {
             (new Thread(fetcher)).start();
 
 
-            BlockingQueue<String> urlToAnalyzeQueue = new ArrayBlockingQueue<String>(queueSize);
-            BlockingQueue<Pair<String, String>> fileToAnalyzedQueue = new ArrayBlockingQueue<Pair<String, String>>(queueSize);
-            BlockingQueue<String> urlToDownloadQueue = new ArrayBlockingQueue<String>(queueSize);
+            BlockingQueue<UrlMessage> urlToAnalyzeQueue = new ArrayBlockingQueue<UrlMessage>(queueSize);
+            BlockingQueue<Pair<String, UrlMessage>> fileToAnalyzedQueue = new ArrayBlockingQueue<Pair<String, UrlMessage>>(queueSize);
+            BlockingQueue<UrlMessage> urlToDownloadQueue = new ArrayBlockingQueue<UrlMessage>(queueSize);
 
             ConcurrentHashMap<String,Boolean> hashMap = new ConcurrentHashMap<String, Boolean>();
 
@@ -71,9 +68,10 @@ public class Launcher {
                 (new Thread(new FileAnalyzer(i, fileToAnalyzedQueue, urlToAnalyzeQueue, monitorQueue))).start();
             }
 
+            int maxIterations = Integer.parseInt(prop.getProperty("iterations"));
             int numberOfUrlAnalyzer = Integer.parseInt(prop.getProperty("urlAnalyzer"));
             for (int i = 0; i < numberOfUrlAnalyzer; ++i) {
-                (new Thread(new FileDownloader(i, urlToDownloadQueue,fileToAnalyzedQueue, monitorQueue))).start();
+                (new Thread(new FileDownloader(i, maxIterations, urlToDownloadQueue,fileToAnalyzedQueue, monitorQueue))).start();
             }
 
             int numberOfFileDownloader = Integer.parseInt(prop.getProperty("fileDownloader"));
@@ -93,7 +91,7 @@ public class Launcher {
                 try {
                     URI u = new URI(src);
                     if (u.isAbsolute()) {
-                        urlToAnalyzeQueue.put(src);
+                        urlToAnalyzeQueue.put(new UrlMessage(0,src));
                     }
                 } catch (URISyntaxException e) {
                     e.printStackTrace();
