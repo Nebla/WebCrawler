@@ -18,7 +18,7 @@ public class Launcher {
         InputStream input = null;
 
         try {
-            String configFile = "Config/Configd.properties";
+            String configFile = "Config/Config.properties";
             File f = new File(configFile);
             if(!f.exists()) {
                 System.err.println("Config file " + configFile + " missing");
@@ -42,9 +42,14 @@ public class Launcher {
 
             int queueSize =  Integer.parseInt(prop.getProperty("queueSize"));
 
+            int numberOfFileAnalyzer = Integer.parseInt(prop.getProperty("fileAnalyzer"));
+            int numberOfUrlAnalyzer = Integer.parseInt(prop.getProperty("fileDownloader"));
+            int numberOfFileDownloader = Integer.parseInt(prop.getProperty("urlAnalyzer"));
+
             // Monitor
             MonitorStats stats = new MonitorStats();
-            stats.initMonitorStats();
+            stats.initMonitorStats(numberOfUrlAnalyzer, numberOfFileAnalyzer, numberOfFileDownloader);
+
             BlockingQueue<MonitorMessage> monitorQueue = new ArrayBlockingQueue<MonitorMessage>(queueSize);
             MonitorWriter writer = new MonitorWriter(stats);
             writer.initializeMonitor(prop.getProperty("logFile"), Integer.parseInt(prop.getProperty("logInterval")),Integer.parseInt(prop.getProperty("flushInterval")));
@@ -65,19 +70,16 @@ public class Launcher {
 
             ConcurrentHashMap<String,Boolean> hashMap = new ConcurrentHashMap<String, Boolean>();
 
-            // Crawler worers
-            int numberOfFileAnalyzer = Integer.parseInt(prop.getProperty("fileAnalyzer"));
+            // Crawler workers
             for (int i = 0; i < numberOfFileAnalyzer; ++i) {
                 (new Thread(new FileAnalyzer(i, fileToAnalyzedQueue, urlToAnalyzeQueue, monitorQueue))).start();
             }
 
             int maxIterations = Integer.parseInt(prop.getProperty("iterations"));
-            int numberOfUrlAnalyzer = Integer.parseInt(prop.getProperty("fileDownloader"));
             for (int i = 0; i < numberOfUrlAnalyzer; ++i) {
                 (new Thread(new FileDownloader(i, maxIterations, urlToDownloadQueue,fileToAnalyzedQueue, monitorQueue))).start();
             }
 
-            int numberOfFileDownloader = Integer.parseInt(prop.getProperty("urlAnalyzer"));
             for (int i = 0; i < numberOfFileDownloader; ++i) {
                 (new Thread(new UrlAnalyzer(i, urlToAnalyzeQueue,urlToDownloadQueue,hashMap, monitorQueue, urlLoggerQueue))).start();
             }

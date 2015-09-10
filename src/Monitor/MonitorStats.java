@@ -28,9 +28,9 @@ public class MonitorStats {
         fileDownloaderState = new HashMap<Integer, ThreadState.Status>();
     }
 
-    public synchronized void initMonitorStats () {
-            // I synchronize this block to be consistent, in that every public method should be atomic, but it's not neccesary
-            String configFile = "Config/Config.properties";
+    public synchronized void initMonitorStats (Integer urlAnalyzers, Integer fileAnalyzers, Integer fileDownloaders) {
+            // I synchronize this block to be consistent, in that every public method should be atomic, but it's not necessary
+            /*String configFile = "Config/Config.properties";
             Properties prop = new Properties();
             InputStream input;
             try {
@@ -40,11 +40,11 @@ public class MonitorStats {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
-            }
+            }*/
 
-            this.initializeStats(fileAnalyzerState, Integer.parseInt(prop.getProperty("fileAnalyzer")));
-            this.initializeStats(fileDownloaderState, Integer.parseInt(prop.getProperty("fileDownloader")));
-            this.initializeStats(urlAnalyzerState, Integer.parseInt(prop.getProperty("urlAnalyzer")));
+            this.initializeStats(fileAnalyzerState, fileAnalyzers);
+            this.initializeStats(fileDownloaderState, fileDownloaders);
+            this.initializeStats(urlAnalyzerState, urlAnalyzers);
 
             urlsCount = 0;
 

@@ -33,8 +33,6 @@ public class MonitorWriter implements Runnable {
         }
     }
 
-
-    @Override
     public void run() {
         while (!Thread.interrupted()) {
             String statsString = stats.getFormattedStats();
