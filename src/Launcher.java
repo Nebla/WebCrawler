@@ -18,18 +18,22 @@ public class Launcher {
         InputStream input = null;
 
         try {
-            String configFile = "Config/Config.properties";
+            String configFile = "Config/Configd.properties";
             File f = new File(configFile);
             if(!f.exists()) {
                 System.err.println("Config file " + configFile + " missing");
                 System.err.println("Format:\n" +
                         "####Config file start####\n" +
-                        "fileAnalyzer=#\n" +
-                        "fileDownloader=#\n" +
-                        "urlAnalyzer=#\n" +
-                        "queueSize=#\n" +
+                        "iterations = #\n"+
+                        "fileAnalyzer = #\n"+
+                        "fileDownloader = #\n"+
+                        "urlAnalyzer = #\n"+
+                        "queueSize = #\n"+
+                        "urlLogFile = nameUrlLogFile.log\n"+
+                        "logFile = nameMonitorLogFile.log\n"+
+                        "logInterval = #\n"+
+                        "flushInterval = #\n"+
                         "####Config file end####");
-
                 System.exit(-1);
             }
             input = new FileInputStream(configFile);
